@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Simulador de regimes tributários 2027 — Simples híbrido</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F2F4F6; --surface:#FFFFFF; --ink:#16233A; --muted:#5B6678; --line:#D5DAE1;
+  --s1:#7A8699; --s2:#0F7B6C; --s3:#C2872B; --s4:#8C3B5E; --neg:#B42318; --track:#DCE1E7;
+  --t1:#16233A; --t2:#4F6D8F; --t3:#8FA7C2; --t4:#C2872B; --t5:#8C3B5E;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F1724; --surface:#172234; --ink:#E6EBF2; --muted:#9AA6B8; --line:#2A3850;
+    --s1:#9AA6B8; --s2:#2BB39F; --s3:#E0A64A; --s4:#C06A92; --neg:#F2785C; --track:#2A3850;
+    --t1:#E6EBF2; --t2:#7FA0C4; --t3:#3E5A7A; --t4:#E0A64A; --t5:#C06A92;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F1724; --surface:#172234; --ink:#E6EBF2; --muted:#9AA6B8; --line:#2A3850;
+  --s1:#9AA6B8; --s2:#2BB39F; --s3:#E0A64A; --s4:#C06A92; --neg:#F2785C; --track:#2A3850;
+  --t1:#E6EBF2; --t2:#7FA0C4; --t3:#3E5A7A; --t4:#E0A64A; --t5:#C06A92;
+}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Libre Franklin",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+  font-size:16px;line-height:1.55;font-variant-numeric:tabular-nums}
+main{max-width:1080px;margin:0 auto;padding:40px 24px 64px}
+h1{font-size:clamp(1.6rem,3.2vw,2.3rem);line-height:1.15;font-weight:800;letter-spacing:-.02em;margin:0 0 8px;max-width:22ch}
+h2{font-size:1.2rem;font-weight:700;margin:0 0 4px;letter-spacing:-.01em}
+.sub{color:var(--muted);max-width:68ch;margin:0}
+.lede{margin-top:40px;padding:32px 0 28px;border-top:3px solid var(--ink)}
+.answer{font-size:clamp(1.35rem,2.8vw,2rem);line-height:1.35;font-weight:500;max-width:34ch;margin:0 0 24px;letter-spacing:-.01em}
+.answer b{font-weight:800}
+.answer .win{color:var(--win,var(--s2));font-weight:800}
+.big-slider{display:flex;align-items:center;gap:18px;max-width:720px}
+.big-slider output{font-weight:800;font-size:1.4rem;min-width:4.2ch;text-align:right}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:28px;background:transparent;cursor:pointer}
+input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:3px;background:linear-gradient(to right,var(--ink) var(--fill,50%),var(--track) var(--fill,50%))}
+input[type=range]::-moz-range-track{height:6px;border-radius:3px;background:var(--track)}
+input[type=range]::-moz-range-progress{height:6px;border-radius:3px;background:var(--ink)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--surface);border:3px solid var(--ink);margin-top:-8px}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--surface);border:3px solid var(--ink)}
+input[type=range]:focus-visible{outline:2px solid var(--s2);outline-offset:4px;border-radius:4px}
+.slider-ends{display:flex;justify-content:space-between;color:var(--muted);font-size:.8rem;max-width:720px;padding-right:calc(4.2ch + 18px)}
+.controls{display:grid;grid-template-columns:repeat(3,1fr);gap:28px;margin-top:28px;padding-top:20px;border-top:1px solid var(--line)}
+.ctrl label{display:flex;justify-content:space-between;gap:8px;font-size:.9rem;color:var(--muted)}
+.ctrl label span:last-child{color:var(--ink);font-weight:700}
+.ctrl small{display:block;color:var(--muted);font-size:.78rem;line-height:1.4;margin-top:2px}
+section{margin-top:48px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:24px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;margin:12px 0 8px;font-size:.88rem}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+.legend i{width:14px;height:4px;border-radius:2px;display:inline-block}
+.chart-wrap{position:relative}
+svg{display:block;width:100%;height:auto;overflow:visible}
+.tip{position:absolute;pointer-events:none;background:var(--ink);color:var(--bg);font-size:.8rem;padding:8px 10px;border-radius:4px;line-height:1.45;white-space:nowrap;opacity:0;transition:opacity .12s}
+.tip.on{opacity:1}
+.rows{display:grid;gap:14px;margin-top:16px}
+.row{display:grid;grid-template-columns:170px 1fr 120px;gap:14px;align-items:center}
+.row .name{font-weight:600;font-size:.95rem}
+.row .val{text-align:right;font-weight:700}
+.row .meta{grid-column:2/4;color:var(--muted);font-size:.8rem;margin-top:-10px}
+.bar{position:relative;height:18px;background:transparent}
+.bar .zero{position:absolute;top:-3px;bottom:-3px;width:1px;background:var(--muted)}
+.bar .fill{position:absolute;top:0;bottom:0;border-radius:2px;transition:left .25s,width .25s}
+.row.best .name::after{content:"maior lucro";margin-left:8px;font-size:.7rem;font-weight:700;color:var(--s2);border:1px solid var(--s2);border-radius:3px;padding:1px 5px;vertical-align:2px}
+.stack{display:flex;height:18px;border-radius:2px;overflow:hidden}
+.stack div{transition:width .25s}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.note{color:var(--muted);font-size:.85rem;margin-top:14px;max-width:70ch}
+details{margin-top:0}
+summary{cursor:pointer;font-weight:700;font-size:1.05rem;padding:4px 0}
+summary:focus-visible{outline:2px solid var(--s2);outline-offset:3px}
+.table-wrap{overflow-x:auto;margin-top:14px}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:.9rem}
+th,td{padding:7px 10px;text-align:right;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+thead th{font-weight:700;border-bottom:2px solid var(--ink)}
+tr.sum td{font-weight:700}
+td.neg{color:var(--neg)}
+.method p{max-width:70ch;margin:0 0 10px}
+footer{margin-top:56px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:.85rem}
+@media (max-width:760px){
+  main{padding:28px 16px 48px}
+  .controls{grid-template-columns:1fr;gap:18px}
+  .two{grid-template-columns:1fr}
+  .row{grid-template-columns:110px 1fr 96px;gap:10px}
+  .row .name{font-size:.85rem}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Simples puro, Simples híbrido, Presumido ou Real: quem deixa mais lucro em 2027?</h1>
+    <p class="sub">Simulação para uma distribuidora de embalagens que vende para empresas e para consumidor final. Empresa e números fictícios, com as regras de transição da Reforma Tributária para 2027.</p>
+  </header>
+
+  <div class="lede">
+    <p class="answer" id="answer" aria-live="polite"></p>
+    <div class="big-slider">
+      <input type="range" id="b2b" min="0" max="100" step="1" value="50" aria-label="Percentual das vendas para empresas (B2B)">
+      <output id="b2bOut" for="b2b">50%</output>
+    </div>
+    <div class="slider-ends"><span>Só consumidor final</span><span>Só empresas</span></div>
+
+    <div class="controls">
+      <div class="ctrl">
+        <label for="rec"><span>Faturamento anual</span><span id="recOut"></span></label>
+        <input type="range" id="rec" min="400000" max="3600000" step="50000" value="2400000">
+        <small>Custos e despesas acompanham o faturamento na mesma proporção.</small>
+      </div>
+      <div class="ctrl">
+        <label for="fc"><span>Compras que geram crédito</span><span id="fcOut"></span></label>
+        <input type="range" id="fc" min="0" max="100" step="5" value="80">
+        <small>Parte das compras feita de fornecedores do regime regular.</small>
+      </div>
+      <div class="ctrl">
+        <label for="cbs"><span>Alíquota da CBS</span><span id="cbsOut"></span></label>
+        <input type="range" id="cbs" min="7" max="10" step="0.1" value="8.8">
+        <small>Estimativa; a alíquota de referência ainda pode ser ajustada.</small>
+      </div>
+    </div>
+  </div>
+
+  <section>
+    <h2>Lucro líquido conforme o peso das vendas para empresas</h2>
+    <p class="sub" id="beText"></p>
+    <div class="legend" id="legend"></div>
+    <div class="panel chart-wrap">
+      <svg id="line" viewBox="0 0 760 330" role="img" aria-label="Gráfico de lucro líquido por percentual de vendas B2B"></svg>
+      <div class="tip" id="tip"></div>
+    </div>
+  </section>
+
+  <section class="two">
+    <div>
+      <h2>Lucro líquido no cenário atual</h2>
+      <p class="sub">Margem e carga tributária sobre o valor cobrado dos clientes.</p>
+      <div class="rows" id="profitRows"></div>
+    </div>
+    <div>
+      <h2>Para onde vão os tributos</h2>
+      <p class="sub">Total pago por ano em cada regime.</p>
+      <div class="legend" id="taxLegend"></div>
+      <div class="rows" id="taxRows"></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="panel">
+      <h2>Por que o cliente empresa prefere o híbrido</h2>
+      <p class="sub" id="creditText"></p>
+    </div>
+  </section>
+
+  <section>
+    <details>
+      <summary>DRE completa dos quatro regimes</summary>
+      <div class="table-wrap"><table id="dre"></table></div>
+    </details>
+  </section>
+
+  <section class="method">
+    <h2>Como a simulação funciona</h2>
+    <p>Em 2027 a CBS entra com alíquota cheia no lugar do PIS/COFINS, o IBS segue em fase de teste (0,1%) e o ICMS continua valendo. No Simples puro, a parcela de PIS/COFINS do DAS vira CBS e o cliente empresa só aproveita esse pedaço como crédito. No Simples híbrido, essa parcela sai do DAS e a CBS/IBS é apurada por fora, com crédito cheio nas compras e o cliente tomando crédito integral.</p>
+    <p>Preço: o consumidor final paga o mesmo valor total em todos os regimes, então a CBS/IBS por fora sai da margem da empresa. O cliente empresa paga o mesmo custo líquido depois de tomar crédito, então a diferença de crédito vira preço para a empresa.</p>
+    <p>Premissas fixas: CMV de 60% do faturamento, folha de 15%, despesas com crédito de 6,25% e sem crédito de 2,5%; ICMS de 18% nas vendas e crédito médio de 12% nas compras; encargos de 27,8% sobre a folha fora do Simples; Anexo I do Simples (LC 123/2006) e presunção de 8%/12% no Presumido (Lei 9.249/1995). Não considera ST, DIFAL, benefícios fiscais nem o efeito de caixa dos créditos. É um estudo ilustrativo, não um parecer.</p>
+  </section>
+
+  <footer>Lucas · projeto de portfólio em Controladoria e FP&amp;A · base legal de referência: LC 214/2025, LC 123/2006, Lei 9.249/1995</footer>
+</main>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const brl = v => (v < 0 ? "−R$ " : "R$ ") + Math.abs(Math.round(v)).toLocaleString("pt-BR");
+  const pct = (v, d=1) => (v*100).toLocaleString("pt-BR",{minimumFractionDigits:d,maximumFractionDigits:d}) + "%";
+  const kfmt = v => { const a=Math.abs(v); const s=v<0?"−":""; return a>=1e6 ? s+"R$ "+(a/1e6).toLocaleString("pt-BR",{maximumFractionDigits:1})+" mi" : s+"R$ "+Math.round(a/1000)+" mil"; };
+
+  const SIMPLES = [[0,.04,0],[180000.01,.073,5940],[360000.01,.095,13860],[720000.01,.107,22500],[1800000.01,.143,87300],[3600000.01,.19,378000]];
+  const ae = x => { let f=SIMPLES[0]; for (const s of SIMPLES) if (x>=s[0]) f=s; return (x*f[1]-f[2])/x; };
+  const K = {cmv:.60, dc:.0625, ds:.025, folha:.15, ibs:.001, icmsS:.18, icmsC:.12, enc:.278, sh:.155};
+  const NAMES = ["Simples puro","Simples híbrido","Lucro Presumido","Lucro Real"];
+  const COLORS = ["--s1","--s2","--s3","--s4"];
+  const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+
+  function model(P, b, fc, cbs){
+    const t = cbs + K.ibs, C = P*K.cmv, Dc = P*K.dc, Ds = P*K.ds, F = P*K.folha;
+    const aeS = ae(P), creditS = aeS*K.sh;
+    const recB2C = P*(1-b)/(1+t), recB2B = P*b*(1-creditS), R = recB2C + recB2B;
+    const cbsCred = C*fc*t/(1+t), DcN = Dc/(1+t);
+    const s = {rec:P, recB2C:P*(1-b), recB2B:P*b, das:P*aeS, icms:0, cmv:C, folha:F, enc:0, dc:Dc, ds:Ds, ir:0, cs:0, cbs:0, icmsL:0, fat:P};
+    const aeH = ae(R);
+    const h = {rec:R, recB2C, recB2B, das:R*aeH*(1-K.sh), icms:0, cmv:C-cbsCred, folha:F, enc:0, dc:DcN, ds:Ds, ir:0, cs:0};
+    const base = {rec:R, recB2C, recB2B, das:0, icms:R*K.icmsS, cmv:C-cbsCred-C*K.icmsC, folha:F, enc:F*K.enc, dc:DcN, ds:Ds};
+    const p = {...base}, r = {...base};
+    const cbsFora = R*t - cbsCred - Dc*t/(1+t), icmsL = R*K.icmsS - C*K.icmsC;
+    [s,h,p,r].forEach(x => { x.lair = x.rec - x.das - x.icms - x.cmv - x.folha - x.enc - x.dc - x.ds; });
+    p.ir = R*.08*.15 + Math.max(0,R*.08-240000)*.10; p.cs = R*.12*.09;
+    r.ir = Math.max(0,r.lair)*.15 + Math.max(0,r.lair-240000)*.10; r.cs = Math.max(0,r.lair)*.09;
+    [h,p,r].forEach(x => { x.cbs = cbsFora; x.fat = R*(1+t); });
+    p.icmsL = icmsL; r.icmsL = icmsL; h.icmsL = 0;
+    const all = [s,h,p,r];
+    all.forEach(x => { x.ll = x.lair - x.ir - x.cs; x.tax = x.das + x.icmsL + x.cbs + x.enc + x.ir + x.cs; x.carga = x.tax/x.fat; x.margem = x.ll/x.rec; });
+    return {all, creditS, t, creditReg:(1-creditS)*t};
+  }
+
+  const inp = {b2b:$("b2b"), rec:$("rec"), fc:$("fc"), cbs:$("cbs")};
+  function params(){ return {P:+inp.rec.value, b:+inp.b2b.value/100, fc:+inp.fc.value/100, cbs:+inp.cbs.value/100}; }
+  function paintRange(el){ const f=(el.value-el.min)/(el.max-el.min)*100; el.style.setProperty("--fill", f+"%"); }
+
+  function breakEven(q){
+    let prev=null;
+    for (let i=0;i<=1000;i++){
+      const m = model(q.P,i/1000,q.fc,q.cbs), d = m.all[1].ll - m.all[0].ll;
+      if (prev!==null && prev<0 && d>=0) return i/1000;
+      if (i===0 && d>=0) return 0;
+      prev=d;
+    }
+    return null;
+  }
+
+  // legends
+  $("legend").innerHTML = NAMES.map((n,i)=>`<span><i style="background:var(${COLORS[i]})"></i>${n}</span>`).join("");
+  const TAX = [["DAS","das","--t1"],["ICMS líquido","icmsL","--t2"],["CBS/IBS por fora","cbs","--t3"],["Encargos sobre folha","enc","--t4"],["IRPJ + CSLL","irc","--t5"]];
+  $("taxLegend").innerHTML = TAX.map(t=>`<span><i style="background:var(${t[2]})"></i>${t[0]}</span>`).join("");
+
+  let series = [], be = null, q0 = null;
+  const W=760,H=330,ml=78,mr=16,mt=16,mb=40;
+
+  function drawLine(q){
+    series = [];
+    for (let i=0;i<=100;i++){ const m=model(q.P,i/100,q.fc,q.cbs); series.push(m.all.map(x=>x.ll)); }
+    let lo=Math.min(...series.flat()), hi=Math.max(...series.flat());
+    const pad=(hi-lo)*.08; lo-=pad; hi+=pad;
+    const step = niceStep((hi-lo)/5); lo=Math.floor(lo/step)*step; hi=Math.ceil(hi/step)*step;
+    const X = i => ml + (W-ml-mr)*i/100, Y = v => mt + (H-mt-mb)*(1-(v-lo)/(hi-lo));
+    let g = "";
+    for (let v=lo; v<=hi+1e-6; v+=step){
+      g += `<line x1="${ml}" x2="${W-mr}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)" stroke-width="1"/>`;
+      g += `<text x="${ml-10}" y="${Y(v)+4}" text-anchor="end" font-size="11" fill="var(--muted)">${kfmt(v)}</text>`;
+    }
+    if (lo<0 && hi>0) g += `<line x1="${ml}" x2="${W-mr}" y1="${Y(0)}" y2="${Y(0)}" stroke="var(--muted)" stroke-width="1.2"/>`;
+    for (let i=0;i<=100;i+=10) g += `<text x="${X(i)}" y="${H-mb+20}" text-anchor="middle" font-size="11" fill="var(--muted)">${i}%</text>`;
+    g += `<text x="${(ml+W-mr)/2}" y="${H-4}" text-anchor="middle" font-size="11" fill="var(--muted)">vendas para empresas (B2B)</text>`;
+    if (be!==null && be>0 && be<1){
+      const bx=X(be*100);
+      g += `<line x1="${bx}" x2="${bx}" y1="${mt}" y2="${H-mb}" stroke="var(--s2)" stroke-dasharray="4 4" stroke-width="1.3"/>`;
+      g += `<text x="${bx+6}" y="${mt+12}" font-size="11" font-weight="700" fill="var(--s2)">híbrido passa a compensar: ${pct(be,0)}</text>`;
+    }
+    const cur = q.b*100, cx = X(cur);
+    g += `<line x1="${cx}" x2="${cx}" y1="${mt}" y2="${H-mb}" stroke="var(--ink)" stroke-width="1.5"/>`;
+    [3,2,0,1].forEach(k=>{
+      const d = series.map((row,i)=>(i?"L":"M")+X(i).toFixed(1)+" "+Y(row[k]).toFixed(1)).join("");
+      g += `<path d="${d}" fill="none" stroke="var(${COLORS[k]})" stroke-width="${k===1?3:2}" stroke-linejoin="round"/>`;
+      g += `<circle cx="${cx}" cy="${Y(series[Math.round(cur)][k])}" r="4.5" fill="var(--surface)" stroke="var(${COLORS[k]})" stroke-width="2.5"/>`;
+    });
+    g += `<rect id="hit" x="${ml}" y="${mt}" width="${W-ml-mr}" height="${H-mt-mb}" fill="transparent"/>`;
+    g += `<line id="hov" x1="0" x2="0" y1="${mt}" y2="${H-mb}" stroke="var(--muted)" stroke-width="1" opacity="0"/>`;
+    $("line").innerHTML = g;
+    const svg=$("line"), tip=$("tip"), hov=$("hov");
+    const move = ev => {
+      const r = svg.getBoundingClientRect(), sx = (ev.clientX - r.left)*W/r.width;
+      const i = Math.max(0,Math.min(100,Math.round((sx-ml)/(W-ml-mr)*100)));
+      hov.setAttribute("x1",X(i)); hov.setAttribute("x2",X(i)); hov.setAttribute("opacity",1);
+      tip.innerHTML = `<b>${i}% B2B</b><br>` + NAMES.map((n,k)=>`${n}: ${brl(series[i][k])}`).join("<br>");
+      const px = X(i)*r.width/W; tip.style.left = (px > r.width*.6 ? px - tip.offsetWidth - 12 : px + 12) + "px";
+      tip.style.top = "20px"; tip.classList.add("on");
+    };
+    $("hit").addEventListener("pointermove", move);
+    $("hit").addEventListener("pointerleave", ()=>{ tip.classList.remove("on"); hov.setAttribute("opacity",0); });
+    $("hit").addEventListener("click", ev => { const r=svg.getBoundingClientRect(); const sx=(ev.clientX-r.left)*W/r.width;
+      inp.b2b.value = Math.max(0,Math.min(100,Math.round((sx-ml)/(W-ml-mr)*100))); update(); });
+  }
+  function niceStep(x){ const p=Math.pow(10,Math.floor(Math.log10(x))); const n=x/p; return (n<1.5?1:n<3?2:n<7?5:10)*p; }
+
+  function update(){
+    const q = params();
+    Object.values(inp).forEach(paintRange);
+    $("b2bOut").textContent = Math.round(q.b*100)+"%";
+    $("recOut").textContent = kfmt(q.P);
+    $("fcOut").textContent = Math.round(q.fc*100)+"%";
+    $("cbsOut").textContent = pct(q.cbs);
+    const m = model(q.P,q.b,q.fc,q.cbs), a = m.all;
+    const best = a.reduce((bi,x,i)=>x.ll>a[bi].ll?i:bi,0);
+    be = breakEven(q);
+    document.documentElement.style.setProperty("--win", `var(${COLORS[best]})`);
+    const gain = a[best].ll - a[0].ll;
+    $("answer").innerHTML = `Com <b>${Math.round(q.b*100)}%</b> das vendas para empresas, quem deixa mais lucro é o <span class="win">${NAMES[best]}</span>: <b>${brl(a[best].ll)}</b> por ano` +
+      (best===0 ? "." : `, ${brl(gain)} a mais que o Simples puro.`);
+    $("beText").textContent = be===null ? "Nessas condições, o Simples híbrido não supera o Simples puro em nenhum mix de clientes."
+      : be===0 ? "Nessas condições, o Simples híbrido já supera o Simples puro mesmo sem vendas para empresas."
+      : `O Simples híbrido supera o Simples puro quando as vendas para empresas passam de ${pct(be,0)} do faturamento. Toque no gráfico para escolher um mix.`;
+    drawLine(q);
+
+    const lls = a.map(x=>x.ll), maxP=Math.max(0,...lls), maxN=Math.max(0,...lls.map(v=>-v)), span=(maxP+maxN)||1, z=maxN/span*100;
+    $("profitRows").innerHTML = a.map((x,i)=>{
+      const w = Math.abs(x.ll)/span*100, left = x.ll>=0 ? z : z-w;
+      return `<div class="row${i===best?" best":""}"><div class="name">${NAMES[i]}</div>
+        <div class="bar"><div class="fill" style="left:${left}%;width:${w}%;background:var(${x.ll<0?"--neg":COLORS[i]})"></div><div class="zero" style="left:${z}%"></div></div>
+        <div class="val" style="${x.ll<0?"color:var(--neg)":""}">${brl(x.ll)}</div>
+        <div class="meta">margem ${pct(x.margem)} · carga tributária ${pct(x.carga)}</div></div>`;
+    }).join("");
+
+    const maxT = Math.max(...a.map(x=>x.tax));
+    $("taxRows").innerHTML = a.map((x,i)=>{
+      const parts = {das:x.das, icmsL:x.icmsL, cbs:x.cbs, enc:x.enc, irc:x.ir+x.cs};
+      const segs = TAX.map(t=>`<div title="${t[0]}: ${brl(parts[t[1]])}" style="width:${parts[t[1]]/maxT*100}%;background:var(${t[2]})"></div>`).join("");
+      return `<div class="row"><div class="name">${NAMES[i]}</div><div class="stack">${segs}</div><div class="val">${kfmt(x.tax)}</div></div>`;
+    }).join("");
+
+    $("creditText").innerHTML = `A cada R$ 100 comprados, o cliente empresa aproveita <b>${brl2(m.creditS*100)}</b> de crédito quando a distribuidora está no Simples puro, contra <b>${brl2(m.creditReg*100)}</b> no Simples híbrido. Como o custo líquido para ele fica igual nos dois casos, a distribuidora consegue cobrar mais das empresas sem ficar mais cara. É daí que vem a vantagem do híbrido, e por isso ela cresce junto com o peso das vendas B2B.`;
+
+    const L = [["Receita — vendas B2C","recB2C",1],["Receita — vendas B2B","recB2B",1],["Receita bruta","rec",1,1],["(−) DAS","das",-1],["(−) ICMS sobre vendas","icms",-1],
+      ["(−) CMV líquido de créditos","cmv",-1],["(−) Folha de pagamento","folha",-1],["(−) Encargos sobre folha","enc",-1],["(−) Despesas com crédito","dc",-1],
+      ["(−) Despesas sem crédito","ds",-1],["Lucro antes do IR/CSLL","lair",1,1],["(−) IRPJ","ir",-1],["(−) CSLL","cs",-1],["Lucro líquido","ll",1,1]];
+    $("dre").innerHTML = `<thead><tr><th>R$ por ano</th>${NAMES.map(n=>`<th>${n}</th>`).join("")}</tr></thead><tbody>` +
+      L.map(l=>`<tr class="${l[3]?"sum":""}"><td>${l[0]}</td>${a.map(x=>{const v=x[l[1]]*l[2];return `<td class="${v<0&&l[3]?"neg":""}">${Math.abs(v)<.5?"–":brl(v)}</td>`;}).join("")}</tr>`).join("") + "</tbody>";
+  }
+  const brl2 = v => "R$ " + v.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
+
+  Object.values(inp).forEach(el => el.addEventListener("input", update));
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", update);
+  update();
+})();
+</script>
+</body>
+</html>
